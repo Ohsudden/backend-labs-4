@@ -1,0 +1,191 @@
+openapi: 3.0.3
+info:
+  title: Keycloak OAuth API with Separate Endpoints
+  version: 1.1.0
+servers:
+  - url: http://localhost:8080/
+paths:
+  /realms/{firstname}/protocol/openid-connect/auth?:
+    get:
+      summary: OpenID Connect Authorization Flow
+      parameters:
+        - name: firstname
+          in: path
+          required: true
+          schema:
+            type: string
+            example: Volodymyr
+        - name: response_type
+          in: query
+          required: true
+          schema:
+            type: string
+            example: code
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+            example: volodymyr-keycloak-client
+        - name: redirect_uri
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+            example: http://localhost:3000/callback
+        - name: scope
+          in: query
+          required: true
+          schema:
+            type: string
+            example: openid
+      responses:
+        '302':
+          description: >
+            Redirect.
+        '400':
+          description: Invalid request parameters.
+
+  /realms/Volodymyr/protocol/openid-connect/auth:
+      get:
+        summary: Implicit Flow
+        parameters:
+          - name: response_type
+            in: query
+            required: true
+            schema:
+              type: string
+              default: token
+          - name: client_id
+            in: query
+            required: true
+            schema:
+              type: string
+              example: volodymyr-keycloak-client
+          - name: redirect_uri
+            in: query
+            required: true
+            schema:
+              type: string
+              example: http://localhost:3000/callback
+          - name: scope
+            in: query
+            required: false
+            schema:
+              type: string
+              example: openid
+        responses:
+          '302':
+            description: Перенаправлення із токеном у фрагменті URL
+
+  /realms/Volodymyr/protocol/openid-connect/token?:
+    post:
+      summary: Password Credentials Flow
+      description: >
+        Отримання токена через Resource Owner Password Credentials Flow.
+        В цьому запиті користувач передає свої облікові дані напряму.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                grant_type:
+                  type: string
+                  default: password
+                username:
+                  type: string
+                  description: Ім’я користувача.
+                  example: "volodymyr"
+                password:
+                  type: string
+                  description: Пароль користувача.
+                  example: "test"
+                client_id:
+                  type: string
+                  default: volodymyr-keycloak-client
+                client_secret:
+                  type: string
+                  description: Необов’язковий, якщо клієнт є public.
+                  example: "qJKomB7Hu40w7o43K1DxGLkBReXbN0Cf"
+      responses:
+        '200':
+          description: Токен успішно отримано
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  expires_in:
+                    type: integer
+
+  /realms/Volodymyr/protocol/openid-connect/token:
+    post:
+      summary: Client Credentials Flow
+      description: >
+        Отримання токена через Client Credentials Flow.
+        Підходить для серверних застосувань, коли доступ здійснюється без участі кінцевого користувача.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                grant_type:
+                  type: string
+                  default: client_credentials/password
+                client_id:
+                  type: string
+                  default: volodymyr-keycloak-client
+                client_secret:
+                  type: string
+                  description: Секрет клієнта для конфіденційних клієнтів.
+                  example: "qJKomB7Hu40w7o43K1DxGLkBReXbN0Cf"
+      responses:
+        '200':
+          description: Токен успішно отримано
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  expires_in:
+                    type: integer
+components:
+  securitySchemes:
+    AuthorizationCode:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: http://localhost:8080/realms/Volodymyr/protocol/openid-connect/auth
+          tokenUrl: http://localhost:8080/realms/Volodymyr/protocol/openid-connect/token
+          scopes:
+            openid: 'Отримання OpenID ідентифікації'
+    Implicit:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: http://localhost:8080/realms/Volodymyr/protocol/openid-connect/auth
+          scopes:
+            openid: 'Отримання OpenID ідентифікації'
+    Password:
+      type: oauth2
+      flows:
+        password:
+          tokenUrl: http://localhost:8080/realms/Volodymyr/protocol/openid-connect/token
+          scopes:
+            openid: 'Отримання OpenID ідентифікації'
+    ClientCredentials:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: http://localhost:8080/realms/Volodymyr/protocol/openid-connect/token
+          scopes:
+            openid: 'Отримання OpenID ідентифікації'
